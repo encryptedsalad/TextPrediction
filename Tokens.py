@@ -41,7 +41,7 @@ class AlphabetTokenizer(Tokenizer):
         out = ""
         for token in input:
             if token <= 0 or token > len(self.alphabet):
-                out = out + "|" # missing token character
+                out = out + "+" # missing token character
             out = out + self.alphabet[token - 1]
         return out
 
