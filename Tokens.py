@@ -38,16 +38,15 @@ class AlphabetTokenizer(Tokenizer):
     def str_to_stream(self, input: str) -> list[int]:
         out = []
         for char in input:
-            out.append(self.alphabet.find(input[0]) + 1)
+            out.append(self.alphabet.find(char) + 1)
         return out
     
     def stream_to_str(self, input: list[int]) -> str:
         out = ""
         for token in input:
             if token <= 0 or token > len(self.alphabet):
-            # arbitrarily decided that vertical bar is the standard ascii null char
-                out.append("|")
-            out.append(self.alphabet[token - 1])
+                out = out + "|" # missing token character
+            out = out + self.alphabet[token - 1]
         return out
 
 def find_most_freq_words(data: str = ""):
@@ -71,7 +70,7 @@ class WordTokenizer(Tokenizer):
     words : list[int]
     num_unique_tokens : int
     
-    def __init__(self, top_n: int = 10000, words: list[str] = None):
+    def __init__(self, top_n: int = 40000, words: list[str] = None):
         # if we are given words, then we just use them
         if words == None:
             words = find_most_freq_words()

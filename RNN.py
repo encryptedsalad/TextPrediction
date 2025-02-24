@@ -43,7 +43,7 @@ class RNNModel(nn.Module):
 
         return torch.stack(outputs)
     
-    def autoregress(self, len: int):
+    def autoregress(self, len: int, temperature = 1.0):
         # TODO implement temperature
         cur_state = self.initial_h.to(device)
         stream = [1]
@@ -55,7 +55,8 @@ class RNNModel(nn.Module):
             state_2 = self.W_hh @ cur_state
             cur_state = torch.tanh(state_1 + state_2 + self.B_h).to(device)
             logits = self.W_hy @ cur_state
-            _,next_token = torch.max(logits, dim = 0)
+            probs = F.softmax(logits / temperature, dim = 0)
+            next_token = torch.multinomial(probs, 1)
             stream.append(next_token)
         
         return stream
@@ -86,8 +87,3 @@ def train(trn_data_path: str, model: RNNModel, loss_fn, optimizer):
             with torch.no_grad():
                 print(model.tokenizer.stream_to_str(model.autoregress(10)))
             model.train()
-            
-
-            
-
-            
