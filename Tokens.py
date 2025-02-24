@@ -1,7 +1,3 @@
-# I want to create an abstract base class that contains:
-# 1: The number of possible tokens
-# 2: A function that can turn a plaintext string into a list of tokens
-# 3: A function that can turn a list of tokens into a plaintext string
 from abc import ABC, abstractmethod
 import json
 
@@ -70,8 +66,7 @@ class WordTokenizer(Tokenizer):
     words : list[int]
     num_unique_tokens : int
     
-    def __init__(self, top_n: int = 40000, words: list[str] = None):
-        # if we are given words, then we just use them
+    def __init__(self, top_n: int = 5000, words: list[str] = None):
         if words == None:
             words = find_most_freq_words()
         self.words = words[:top_n]
