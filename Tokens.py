@@ -28,7 +28,7 @@ class ASCIITokenizer(Tokenizer):
         return out
     
 class AlphabetTokenizer(Tokenizer):
-    alphabet = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz:.?!()\n\t '
+    alphabet = '123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz:.?!()\n\t '
     num_unique_tokens = len(alphabet) + 1
     
     def str_to_stream(self, input: str) -> list[int]:
