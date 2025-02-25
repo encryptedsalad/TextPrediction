@@ -20,6 +20,7 @@ class RNNModel(nn.Module):
         nn.init.xavier_normal_(self.W_hh)
         nn.init.xavier_normal_(self.W_hy)
         
+    # TODO make this use the vectors that the GRU does
     def forward(self, token_stream: list[int]):
         hidden_states = []
         outputs = []
@@ -42,7 +43,7 @@ class RNNModel(nn.Module):
     
     def autoregress(self, len: int, temperature = 1.0):
         cur_state = self.initial_h.to(device)
-        next_token = self.tokenizer.str_to_stream("the quick brown fox jumps over the lazy dog")[0]
+        next_token = self.tokenizer.str_to_stream("the quick brown fox")[0]
         stream = [next_token]
         for _ in range(len):
             x = F.one_hot(torch.tensor([next_token]), self.num_tokens).float().squeeze(0).to(device)

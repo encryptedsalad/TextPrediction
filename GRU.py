@@ -4,7 +4,7 @@ from torch.utils.data import DataLoader
 import torch.nn.functional as F
 from Tokens import Tokenizer
 
-device = torch.device("mps")
+device = torch.device("cuda")
 
 class GRUModel(nn.Module):
     def __init__(self, tokenizer: Tokenizer, hidden_dim: int):
@@ -34,8 +34,14 @@ class GRUModel(nn.Module):
         nn.init.xavier_normal_(self.W_hz)
         nn.init.xavier_normal_(self.W_hr)
         nn.init.xavier_normal_(self.W_hy)
-        
-    def forward(self, token_stream: list[int]):
+
+    def package_batch(self, batch: list[int]) -> torch.Tensor:
+        out_list = []
+        for token in batch:
+            out_list.append(F.one_hot(torch.tensor([token]), self.num_tokens).float().squeeze(0).to(device))
+        return torch.stack(out_list)
+
+    def forward(self, input: torch.Tensor):
         h = self.initial_h.to(device)
         z = self.initial_z.to(device)
         r = self.initial_r.to(device)
@@ -49,8 +55,8 @@ class GRUModel(nn.Module):
         outputs = [self.W_hy @ h]
         
         # keep list of hidden states so we aren't modifying h in place
-        for token in token_stream:
-            x = F.one_hot(torch.tensor([token]), self.num_tokens).float().squeeze(0).to(device)
+        tokens = input.unbind()
+        for x in tokens:
             z = torch.sigmoid(self.W_xz @ x + self.W_hz @ h + self.B_z)
             r = torch.sigmoid(self.W_xr @ x + self.W_hr @ h + self.B_r)
             k = torch.tanh(self.W_xk @ x + self.W_hk @ (r * h) + self.B_k)
@@ -63,24 +69,17 @@ class GRUModel(nn.Module):
             
             outputs.append(self.W_hy @ h)
 
-        return torch.stack(outputs)
+        return torch.stack(outputs[:-1])
     
-    def autoregress(self, len: int, temperature = 1.0):
+    def autoregress(self, len: int, temperature = 1.0) -> list[int]:
         h = self.initial_h.to(device)
         z = self.initial_z.to(device)
         r = self.initial_r.to(device)
         k = self.initial_k.to(device)
-        
-        hidden_h = [h]
-        hidden_z = [z]
-        hidden_r = [r]
-        hidden_k = [k]
-        
-        outputs = [self.W_hy @ h]
-        stream = []
-        
-        next_token = self.tokenizer.str_to_stream("the quick brown fox jumps over the lazy dog")[0]
-        
+
+        next_token = self.tokenizer.str_to_stream("the quick brown fox")[0]
+        stream = [next_token]
+
         # keep list of hidden states so we aren't modifying h in place
         for _ in range(len):
             x = F.one_hot(torch.tensor([next_token]), self.num_tokens).float().squeeze(0).to(device)
@@ -88,11 +87,6 @@ class GRUModel(nn.Module):
             r = torch.sigmoid(self.W_xr @ x + self.W_hr @ h + self.B_r)
             k = torch.tanh(self.W_xk @ x + self.W_hk @ (r * h) + self.B_k)
             h = ((torch.ones(self.hidden_dim).to(device) - z) * h) + (z * k)
-            
-            hidden_z.append(z)
-            hidden_r.append(r)
-            hidden_k.append(k)
-            hidden_h.append(h)
             
             logits = self.W_hy @ h
             probs = F.softmax(logits / temperature, dim = 0)
@@ -117,7 +111,7 @@ class GRUModel(nn.Module):
         
         self.train()
         for batch_num, batch in enumerate(parts):
-            pred = self(batch)[:-1]
+            pred = self(self.package_batch(batch))
             expected = torch.tensor(batch).to(device)
             loss = loss_fn(pred, expected)
             loss.backward()
