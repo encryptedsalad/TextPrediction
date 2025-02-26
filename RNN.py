@@ -4,19 +4,15 @@ from torch.utils.data import DataLoader
 import torch.nn.functional as F
 from Tokens import Tokenizer
 from abc import ABC, abstractmethod
+device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.mps.is_available() else "cpu")
 
-
-class RNN(ABC):    
-    
-    h : torch.Tensor
+class RNN(ABC):
+    hidden_states : list[torch.Tensor]
     tokenizer: Tokenizer
 
     @abstractmethod
     def next_token(cur_token: torch.Tensor) -> torch.Tensor:
         pass
-
-
-device = torch.device("mps")
 
 
 class RNNModel(nn.Module):

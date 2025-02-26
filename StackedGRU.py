@@ -4,9 +4,9 @@ import torch.nn.functional as F
 from Tokens import Tokenizer
 from GRU import GRUModel
 from torch import gru
+device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.mps.is_available() else "cpu")
 
-device = torch.device("cuda")
-
+# TODO actually this needs to be abstracted out to an n layer network
 class StackedGRU(nn.Module):
     def __init__(self, tokenizer: Tokenizer, hidden_dim: int):
         # h is h in the wikipedia article, k is h hat in the wikipedia article.

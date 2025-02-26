@@ -3,8 +3,7 @@ from torch import nn
 from torch.utils.data import DataLoader
 import torch.nn.functional as F
 from Tokens import Tokenizer
-
-device = torch.device("cuda")
+device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.mps.is_available() else "cpu")
 
 class GRUModel(nn.Module):
     def __init__(self, tokenizer: Tokenizer, hidden_dim: int):
