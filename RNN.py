@@ -6,13 +6,51 @@ from Tokens import Tokenizer
 from abc import ABC, abstractmethod
 device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.mps.is_available() else "cpu")
 
-class RNN(ABC):
-    hidden_states : list[torch.Tensor]
+class RNN(ABC, nn.Module):
     tokenizer: Tokenizer
 
+    def __init__(self, tokenizer):
+        self.tokenizer = tokenizer
+    
     @abstractmethod
-    def next_token(cur_token: torch.Tensor) -> torch.Tensor:
+    def next_state(cur_token: torch.Tensor) -> torch.Tensor:
+        """
+        Takes a single input state and produces a single output state. States are arbitrary 1d tensors. 
+        Whoever implements this function is responsible for keeping track of hidden states.
+        """
         pass
+
+    @abstractmethod
+    def forward(self, batch: torch.Tensor) -> torch.Tensor:
+        """
+        Takes a tensor of input states and produces a tensor of output states.
+        The input tensor is assumed to be a 2d tensor gotten from torch.stack() of a list of 1d state tensors. 
+        The output tensor is a 2d tensor of feeding the batch of input tensors into next_token, and then stacking them.
+        """
+        out_states = []
+        tokens = batch.unbind()
+        for token in tokens:
+            out_states.append(self.next_state(token))
+        return torch.stack(out_states)
+    
+    @abstractmethod
+    def get_token_from_state(self, state: torch.Tensor) -> int:
+        pass
+
+    @abstractmethod
+    def autoregress(self, len: int, start: torch.Tensor) -> list[int]:
+        if start != None:
+            tokens = start.unbind()
+            for token in tokens:
+                cur_state = self.next_state(token)
+
+        out = []
+        for _ in range(len):
+            cur_state = self.next_state(cur_state)
+            out.append(self.get_token_from_state(cur_state))
+        
+
+        
 
 
 class RNNModel(nn.Module):
