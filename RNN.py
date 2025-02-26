@@ -3,8 +3,21 @@ from torch import nn
 from torch.utils.data import DataLoader
 import torch.nn.functional as F
 from Tokens import Tokenizer
+from abc import ABC, abstractmethod
+
+
+class RNN(ABC):    
+    
+    h : torch.Tensor
+    tokenizer: Tokenizer
+
+    @abstractmethod
+    def next_token(cur_token: torch.Tensor) -> torch.Tensor:
+        pass
+
 
 device = torch.device("mps")
+
 
 class RNNModel(nn.Module):
     def __init__(self, tokenizer: Tokenizer, hidden_dim: int):
