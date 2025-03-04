@@ -20,10 +20,15 @@ class SimpleRNN(RNN):
         nn.init.xavier_normal_(self.W_hy)
         
     def first_state(self) -> torch.Tensor:
-        return self.initial_h @ self.W_hy
+        self.h = [self.initial_h]
+        return self.W_hy @ self.initial_h
     
     def next_state(self, cur_token: torch.Tensor) -> torch.Tensor:
         x_state = self.W_xh @ cur_token
         h_state = self.W_hh @ self.h[-1]
         self.h.append(torch.tanh(x_state + h_state + self.B_h))
-        return self.h[-1] @ self.W_hy
+        return self.W_hy @ self.h[-1] 
+    
+    def get_token_from_state(self, state: torch.Tensor, temperature) -> int:
+        probs = F.softmax(state / temperature, dim = 0)
+        return torch.multinomial(probs, 1)

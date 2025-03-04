@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
-import json
+import torch
+import torch.nn.functional as F
+device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.mps.is_available() else "cpu")
 
 class Tokenizer(ABC):
     num_unique_tokens: int
@@ -11,6 +13,13 @@ class Tokenizer(ABC):
     @abstractmethod
     def stream_to_str(self, tokens: list[int]) -> str:
         pass
+    
+    def stream_to_states(self, input: list[int]) -> torch.Tensor:
+        out_list = []
+        for token in input:
+            out_list.append(F.one_hot(torch.tensor([token]), self.num_unique_tokens).float().squeeze(0).to(device))
+        return torch.stack(out_list)
+        
 
 class ASCIITokenizer(Tokenizer):
     num_unique_tokens = 256
